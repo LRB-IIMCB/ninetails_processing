@@ -1,5 +1,10 @@
 # ninetails_processing
-Scripts used during the development of Ninetails package
+Scripts and code snippets used during the development of **Ninetails** package.
+
+## Training data processing
+
+## Model training
+
 
 
 > **Note**
