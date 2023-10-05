@@ -1,0 +1,192 @@
+---
+title: "Training dataset preparation"
+author: "Natalia Guminska"
+date: '2022-08-03'
+output: html_document
+---
+
+
+# Configuration
+
+```{r, load libs, message = FALSE, include=FALSE}
+
+library(vroom)
+library(rhdf5)
+library(reticulate)
+library(dplyr)
+library(foreach)
+library(reshape2)
+library(ggplot2)
+library(ninetails)
+library(keras)
+library(tensorflow)
+
+```
+
+```{r message = FALSE, echo=FALSE}
+# disable locks - allow to process fast5 files (depends on system configuration)
+rhdf5::h5disableFileLocking()
+
+# use virtualenv to communicate ninetails with correct python version
+# depends on configuration
+reticulate::use_condaenv("r-reticulate")
+
+```
+
+
+
+# Preparing training sets 
+
+Each class of nanopore signals needs to be processed separately. This processing step is needed to extract only those fragments of signals which actually contain signal anomaly of expected shape. It is to ensure that the neural network is fed with the meaningful data only, so the classifier would be reliable.
+
+The production of synthetic molecules is prone to method-specific artifacts (amplification) so to mitigate this error the data was curated.
+
+Based on the characteristic shape of non-A caused signal distortion, we could construct the filtering functions to filter out the desired data. 
+
+## Signal transformation
+
+First step of training dataset preparation is the production of GAFs from corresponding signals.
+
+
+Here is an example of preparation of training data. The processing of training data is the same for each base. 
+One should be aware to define the nucleotide of interest - either adenosine or the one, which was inserted into poly(A) tail construct. 
+
+Each of the subset (per base) should be processed separately, since the filtering criteria for each are hardcoded. 
+
+```{r example C}
+# parameters definition (optional; might be provided in function call)
+nanopolish = "/path/to/nanopolish.tsv"
+sequencing_summary = "/path/to/sequencing_summary.txt"
+workspace= "path/to/basecalled/fast5/"
+num_cores = 30 # number of cores for processing
+basecall_group = "Basecall_1D_000" #basecall group of interest; default given
+pass_only=FALSE
+
+# actual command example
+C_gaf <- ninetails::prepare_trainingset(nucleotide="C",
+                                        nanopolish=nanopolish,
+                                        sequencing_summary=sequencing_summary,
+                                        workspace=workspace,
+                                        num_cores=num_cores,
+                                        basecall_group="Basecall_1D_000",
+                                        pass_only=TRUE)
+```
+
+
+This function outputs the list of arrays (GASF + GADF) corresponding to filtered signal fragment.
+One should produce separate datasets for adenosines, guanosines, cytosines and uridines. 
+
+
+## Sampling the data
+
+The data sets for each class should be of the same size. Naturally, results obtained after the transformation step would not be of the same length (lists). It is due to the fact, that not all insertions fulfill the filtering criteria. To ensure proper model calibration & avoid false-positive reporting, the signals which do not meet those criteria are not included. 
+
+```{r sample the data}
+# setting seed for reprex
+set.seed(123)
+
+# first, random sample list of signals
+# originally, a 9440 signals per each class were selected
+# this was empirically adjusted to prevent overfitting
+# based on multiple training sessions
+sampledA <- sample(A_gaf, size=9440)
+sampledC <- sample(C_gaf, size=9440)
+sampledG <- sample(G_gaf, size=9440)
+sampledU <- sample(U_gaf, size=9440)
+
+# extract names of each selected gafs group (needed for encoding)
+names_A <- names(sampledA)
+names_C <- names(sampledC)
+names_G <- names(sampledG)
+names_U <- names(sampledU)
+
+``` 
+
+
+## Splitting dataset for training, test & validation subsets
+
+The model accompanying the publication & incorporated within the Ninetails package was trained using 37760 items (gaf arrays) comprising of 9440 randomly sampled elements per class. This set was divided into 80:10:10 ratios.
+
+
+```{r}
+# subset original sampled lists:
+trainA <- sampledA[1:8496]
+validA <- sampledA[8497:9440]
+
+trainC <- sampledC[1:8496]
+validC <- sampledC[8497:9440]
+
+trainG <- sampledG[1:8496]
+validG <- sampledG[8497:9440]
+
+trainU <- sampledU[1:8496]
+validU <- sampledU[8497:9440]
+
+```
+
+
+# Transform the training dataset
+
+The dataset needs to be further processed to be passed to the model.
+
+```{r}
+# merge the training data
+gaf_dataset_train <- c(trainA, trainC, trainG, trainU)
+
+# shuffle the training data
+gaf_dataset_train <- sample(gaf_dataset_train, size=33984, replace=FALSE)
+
+# create vector with values for encoding:
+# for A = 0
+# for C = 1
+# for G = 2
+# for U = 3
+
+assign_value_gaf_dataset <- ifelse(names(gaf_dataset_train) %in% names_C, 1, ifelse(names(gaf_dataset_train) %in% names_G, 2, ifelse(names(gaf_dataset_train) %in% names_U, 3, 0)))
+
+# Transform training dataset into keras array:
+# tip: one might want to assign this to the new variable
+
+names(gaf_dataset_train)  <- NULL # remove signal names
+
+gaf_dataset_train <- simplify2array(gaf_dataset_train)
+gaf_dataset_train <- aperm(gaf_dataset_train, c(4,1,2,3))
+
+
+# Create list input for neural network
+train_dataset_cnn <- list()
+train_dataset_cnn[["x"]] <- gaf_dataset_train
+train_dataset_cnn[["y"]] <- assign_value_gaf_dataset
+
+#save(train_dataset_cnn, file = "train_dataset_cnn.RData")
+```
+
+
+# Transform the validation dataset
+
+The same shall be done to the validation data.
+
+```{r}
+# merge the training data
+gaf_dataset_validation <- c(validA, validC, validG, validU)
+
+# shuffle the training data
+gaf_dataset_validation <- sample(gaf_dataset_validation, size=3776, replace=FALSE)
+
+# create vector with values for encoding:
+assign_value_gaf_dataset <- ifelse(names(gaf_dataset_validation) %in% names_C, 1, ifelse(names(gaf_dataset_validation) %in% names_G, 2, ifelse(names(gaf_dataset_validation) %in% names_U, 3, 0)))
+
+names(gaf_dataset_train)  <- NULL # remove signal names
+
+gaf_dataset_validation <- simplify2array(gaf_dataset_validation)
+gaf_dataset_validation <- aperm(gaf_dataset_validation, c(4,1,2,3))
+
+
+# Create list input for neural network
+validation_dataset_cnn <- list()
+validation_dataset_cnn[["x"]] <- gaf_dataset_validation
+validation_dataset_cnn[["y"]] <- assign_value_gaf_dataset
+
+#save(validation_dataset_cnn, file = "validation_dataset_cnn.RData")
+```
+

@@ -1,0 +1,169 @@
+---
+title: "Model training & finetunings"
+author: "Natalia Guminska"
+date: '2022-08-08'
+output: html_document
+---
+
+This is the markdown containing the description of final model training. 
+The resulting model was incorporated into the Ninetails classifier. 
+
+
+# Loading libraries
+
+```{r load libs}
+
+library(tensorflow)
+library(tfruns)
+library(keras)
+library(dplyr)
+library(ggplot2)
+
+```
+
+
+# Loading preprocessed data
+
+```{r load datasets}
+# Loading preprocessed data for training & evaluating the model
+load("train_dataset_cnn.RData")
+
+```
+
+# Training sessions
+
+```{r tfruns_run}
+runs <- tfruns::tuning_run(
+  file = "finetunings_script.R",
+  flags = list(
+    activation = c("linear", "relu", "gelu"),
+    kernel_initializer = c("he_normal", "glorot_normal"),
+    dropout = c(0.3, 0.4, 0.5),
+    batch_size = c(100,200)
+  ),
+  runs_dir = "runs", 
+  confirm = FALSE) 
+
+runs
+```
+
+
+# Finding the best run (out of 36 candidates)
+
+```{r best_runs}
+
+runs_order <- runs %>% arrange(desc(metric_val_accuracy)) %>% 
+  select(run_dir, metric_accuracy, metric_val_accuracy, flag_dropout, 
+         flag_batch_size, flag_kernel_initializer, flag_activation)
+
+runs_order
+```
+
+
+# Clean training (best fit model)
+
+```{r train network}
+# Final clean run
+
+ninetails_model <- keras_model_sequential() %>%
+  layer_conv_2d(filters=32, kernel_size=c(5,5), activation="linear", 
+                input_shape =c(100,100,2), kernel_initializer="he_normal", 
+                padding="valid") %>%
+  layer_batch_normalization() %>%
+  layer_activation_relu() %>%
+  layer_max_pooling_2d(pool_size=c(2,2)) %>%
+  layer_dropout(0.5) %>%
+  layer_conv_2d(filters=32, kernel_size = c(5,5), activation = "linear", 
+                kernel_initializer = "he_normal", padding="valid") %>%
+  layer_batch_normalization() %>% 
+  layer_activation_relu() %>%
+  layer_max_pooling_2d(pool_size=c(2,2)) %>%
+  layer_dropout(0.5) %>%
+  layer_conv_2d(filters=64, kernel_size = c(3,3), activation = "linear", 
+                kernel_initializer = "he_normal", padding="same")%>%
+  layer_batch_normalization()%>%
+  layer_activation_relu() %>%
+  layer_max_pooling_2d(pool_size=c(2,2)) %>%
+  layer_dropout(0.5) %>%
+  layer_conv_2d(filters=128, kernel_size = c(3,3), activation = "linear", 
+                kernel_initializer = "he_normal", padding="same")%>%
+  layer_batch_normalization()%>%
+  layer_activation_relu() %>%
+  layer_max_pooling_2d(pool_size=c(2,2)) %>%
+  layer_dropout(0.5) %>%
+  layer_flatten() %>%
+  layer_dense(units=4, activation="softmax")
+  
+
+ninetails_model %>% compile(
+  optimizer = "adam",
+  loss = "sparse_categorical_crossentropy",
+  metrics = "accuracy"
+)
+
+summary(ninetails_model)
+``` 
+
+
+# Fit the model
+
+
+```{r callbacks definition}
+# print dot for every epoch to check that it is actually working (for debug purposes)
+print_dot_callback <- keras::callback_lambda(
+  on_epoch_end = function(epoch,logs){
+    if (epoch %% 80==0) cat("\n")
+    cat(".")
+  }
+)
+
+# define when to stop the training if validation loss stops decreasing
+early_stop <- keras::callback_early_stopping(monitor="val_loss", patience = 2)
+
+#define how many epochs use to train
+epochs <- 20
+
+``` 
+
+```{r fit model}
+history <- newmodel %>% fit(x=train_gaf_dataset_cnn$x, 
+                            y=train_gaf_dataset_cnn$y, 
+                            epochs=epochs, 
+                            validation_split = 0.1,
+                            batch=50,
+                            callbacks = list(early_stop, print_dot_callback,callback_reduce_lr_on_plateau(factor = 0.001)))
+
+``` 
+
+
+```{r history}
+# show model history
+plot(history)
+
+```
+
+# Confusion matrix
+
+
+```{r confusion}
+test_prediction <- ninetails_model %>% predict(validation_dataset_cnn$x) %>% k_argmax()
+test_prediction2 <- as.numeric(test_prediction)
+test_prediction3 <- as.factor(test_prediction2)
+
+library(caret)
+# this data further visualized in more human friendly manner
+confusion_mat <- confusionMatrix(as.factor(test_prediction3), 
+                                 as.factor(validation_dataset_cnn$y))
+
+confusion_mat
+
+``` 
+
+
+# Saving the model
+
+```{r save model}
+
+keras::save_model_hdf5(ninetails_model, "gasf_gadf_combined_model_20220808.h5", include_optimizer = TRUE)
+
+``` 
