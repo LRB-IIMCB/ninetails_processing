@@ -1,10 +1,11 @@
 # ninetails_processing
 Scripts and code snippets used during the development of **Ninetails** package.
 
-## 
+## Containerized usage
+
+Code below allows to pull docker image containing all necessary dependencies & resources to run the ninetails package. This docker does not contain nanopolish and guppy software.
 
 ``` 
-
 docker pull ghcr.io/nemitheasura/ninetails-docker:latest
 ```
 
