@@ -1,6 +1,13 @@
 # ninetails_processing
 Scripts and code snippets used during the development of **Ninetails** package.
 
+## 
+
+``` 
+
+docker pull ghcr.io/nemitheasura/ninetails-docker:latest
+```
+
 ## Training data processing
 
 ## Model training
