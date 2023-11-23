@@ -1,0 +1,21 @@
+#CRAN packages
+devtools==2.4.5==CRAN==
+tidyverse==2.0.0==CRAN==
+ggplot2==3.4.1==CRAN==
+reticulate==1.28==CRAN==
+keras==2.11.0==CRAN==
+caret==6.0-93==CRAN==
+BiocManager==3.13==CRAN==
+
+#Bioconductor packages
+rhdf5==BIOMGR==
+
+#Github packages
+grimbough/rhdf5filters==GITHUB==
+
+#Github packages
+LRB-IIMCB/ninetails==GITHUB==
+#LRB-IIMCB/nanotail==GITHUB==
+
+
+
