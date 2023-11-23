@@ -37,6 +37,12 @@ The **finetunings_script.R** controlled hyperparameters. The model was trained w
 >
 </div>
 
+# Nanopolish Moderna mRNA-1273
+
+Nanopolish version containing subprogram (nanopolish polya-moderna)[https://github.com/LRB-IIMCB/nanopolish_mRNA-1273] for identification of mΨCmΨAG pentamer at the 3'end of mRNA-1273 vaccine poly(A) tail. This version of Nanopolish was used in our preprint. 
+
+
+
 ## Further info
 
 **Ninetails** has been developed in the <a href="https://www.iimcb.gov.pl/en/research/41-laboratory-of-rna-biology-era-chairs-group">Laboratory of RNA Biology</a> (Dziembowski Lab) at the <a href="https://www.iimcb.gov.pl/en/">International Institute of Molecular and Cell Biology</a> in Warsaw.
