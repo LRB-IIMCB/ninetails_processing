@@ -39,7 +39,7 @@ The **finetunings_script.R** controlled hyperparameters. The model was trained w
 
 # Nanopolish Moderna mRNA-1273
 
-Nanopolish version containing subprogram (nanopolish polya-moderna)[https://github.com/LRB-IIMCB/nanopolish_mRNA-1273] for identification of mΨCmΨAG pentamer at the 3'end of mRNA-1273 vaccine poly(A) tail. This version of Nanopolish was used in our preprint. 
+Nanopolish version containing subprogram [nanopolish polya-moderna](https://github.com/LRB-IIMCB/nanopolish_mRNA-1273) for identification of mΨCmΨAG pentamer at the 3'end of mRNA-1273 vaccine poly(A) tail. This version of Nanopolish was used in our preprint. 
 
 
 
