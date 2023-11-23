@@ -21,11 +21,15 @@ This command launches docker with `RStudio`: (username: rstudio, password:123)
 docker run -it -p 8787:8787 -e PASSWORD=123 --rm r-ninetails
 ```
 The access to `RStudio` is provided through the web browser: http://localhost:8787/ (username: rstudio, password:123).
+
 ## Training data processing
+
+The **Training_dataset_preparation.Rmd** contains steps for preparing dataset to training the model for neural network. 
+
 
 ## Model training
 
-
+The **finetunings_script.R** controlled hyperparameters. The model was trained with **Model_finetunings.Rmd**
 
 > **Note**
 > 
