@@ -9,6 +9,18 @@ Code below allows to pull docker image containing all necessary dependencies & r
 docker pull ghcr.io/nemitheasura/ninetails-docker:latest
 ```
 
+> **Note**
+>
+> This image does not contain Guppy, Nanopolish, minimap2, samtools and other software which is not directly linked with the Ninetails pipeline.
+
+</div>
+
+This command launches docker with `RStudio`: (username: rstudio, password:123)
+
+```
+docker run -it -p 8787:8787 -e PASSWORD=123 --rm r-ninetails
+```
+The access to `RStudio` is provided through the web browser: http://localhost:8787/ (username: rstudio, password:123).
 ## Training data processing
 
 ## Model training
