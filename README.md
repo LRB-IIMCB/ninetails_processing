@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.13310035.svg)](https://doi.org/10.5281/zenodo.13310035)
+
 # ninetails_processing
 Scripts and code snippets used during the development of **Ninetails** package.
 
@@ -41,7 +43,10 @@ The **finetunings_script.R** controlled hyperparameters. The model was trained w
 
 Nanopolish version containing subprogram [nanopolish polya-moderna](https://github.com/LRB-IIMCB/nanopolish_mRNA-1273) for identification of mΨCmΨAG pentamer at the 3'end of mRNA-1273 vaccine poly(A) tail. This version of Nanopolish was used in our preprint. 
 
+# Citation
 
+Please cite this repo as:
+Gumińska, N., Kulińska-Matylla, K., Krawczyk, P. S., Maj, M., Orzeł, W., Mackiewicz, Z., Brouze, A., Mroczek, S., & Dziembowski, A. (2024). LRB-IIMCB/ninetails_processing: v1.0.0 (v1.0.0). Zenodo. https://doi.org/10.5281/zenodo.13310035
 
 ## Further info
 
